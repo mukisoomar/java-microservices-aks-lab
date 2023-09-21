@@ -102,7 +102,8 @@ kubectl apply -f spring-petclinic-api-gateway.yml --namespace spring-petclinic
 # List all pods in the namespace
 kubectl get pods -n spring-petclinic
 
-
+# Debug for errors
+kubectl logs <name-of-the-pod> -n spring-petclinic
 
 
 
