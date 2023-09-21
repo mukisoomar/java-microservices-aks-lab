@@ -1,0 +1,109 @@
+# The below would get AKS login credentials to use with Kubectl
+# The credetnials are stored in ~/.kube/config file
+az aks get-credentials -n $AKSCLUSTER -g $RESOURCE_GROUP
+
+# list all pods in all namespaces
+kubectl get pods --all-namespaces
+
+# Create namespace for petclinic
+NAMESPACE=spring-petclinic
+kubectl create ns $NAMESPACE
+
+# Create teh config-map.yml file under the src/kubernetes/ folder
+# and add the following lines
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-server
+data:
+  # property-like keys; each key maps to a simple value
+  CONFIG_SERVER_URL: "http://config-server:8888"
+
+#  Apply config to the AKS cluster
+kubectl create -f config-map.yml --namespace spring-petclinic
+
+# List config maps to see what exists
+kubectl get configmap -n spring-petclinic
+
+# Desc config maps
+kubectl describe configmap config-server -n spring-petclinic
+
+# In the kubernetes folder copy the contents of the spring-petclinic-api-gateway.yml file.
+curl -o spring-petclinic-api-gateway.yml https://raw.githubusercontent.com/Azure-Samples/java-microservices-aks-lab/main/docs/02_lab_migrate/spring-petclinic-api-gateway.yml
+
+# Replace the image values in ACR 
+IMAGE=${MYACR}.azurecr.io/spring-petclinic-api-gateway:$VERSION
+sed -i "s|#image#|$IMAGE|g" spring-petclinic-api-gateway.yml
+
+
+# copy the contents of the spring-petclinic-admin-server.yml file.
+
+curl -o spring-petclinic-admin-server.yml https://raw.githubusercontent.com/Azure-Samples/java-microservices-aks-lab/main/docs/02_lab_migrate/spring-petclinic-admin-server.yml
+
+IMAGE=${MYACR}.azurecr.io/spring-petclinic-admin-server:$VERSION
+sed -i "s|#image#|$IMAGE|g" spring-petclinic-admin-server.yml
+
+# copy the contents of the spring-petclinic-visits-service.yml file.
+curl -o spring-petclinic-visits-service.yml https://raw.githubusercontent.com/Azure-Samples/java-microservices-aks-lab/main/docs/02_lab_migrate/spring-petclinic-visits-service.yml
+
+IMAGE=${MYACR}.azurecr.io/spring-petclinic-visits-service:$VERSION
+sed -i "s|#image#|$IMAGE|g" spring-petclinic-visits-service.yml
+
+# copy the contents of the spring-petclinic-vets-service.yml file.
+curl -o spring-petclinic-vets-service.yml https://raw.githubusercontent.com/Azure-Samples/java-microservices-aks-lab/main/docs/02_lab_migrate/spring-petclinic-vets-service.yml
+
+IMAGE=${MYACR}.azurecr.io/spring-petclinic-vets-service:$VERSION
+sed -i "s|#image#|$IMAGE|g" spring-petclinic-vets-service.yml
+
+# copy the contents of the spring-petclinic-customers-service.yml file.
+curl -o spring-petclinic-customers-service.yml https://raw.githubusercontent.com/Azure-Samples/java-microservices-aks-lab/main/docs/02_lab_migrate/spring-petclinic-customers-service.yml
+
+IMAGE=${MYACR}.azurecr.io/spring-petclinic-customers-service:$VERSION
+sed -i "s|#image#|$IMAGE|g" spring-petclinic-customers-service.yml
+
+# copy the contents of the spring-petclinic-config-server.yml file.
+curl -o spring-petclinic-config-server.yml https://raw.githubusercontent.com/Azure-Samples/java-microservices-aks-lab/main/docs/02_lab_migrate/spring-petclinic-config-server.yml
+
+IMAGE=${MYACR}.azurecr.io/spring-petclinic-config-server:$VERSION
+sed -i "s|#image#|$IMAGE|g" spring-petclinic-config-server.yml
+
+# copy the contents of the spring-petclinic-discovery-server.yml file.
+curl -o spring-petclinic-discovery-server.yml https://raw.githubusercontent.com/Azure-Samples/java-microservices-aks-lab/main/docs/02_lab_migrate/spring-petclinic-discovery-server.yml
+
+IMAGE=${MYACR}.azurecr.io/spring-petclinic-discovery-server:$VERSION
+sed -i "s|#image#|$IMAGE|g" spring-petclinic-discovery-server.yml
+
+## Start the deployments
+# Set the namespace
+kubectl config set-context --current --namespace=$NAMESPACE
+
+# Deploy the config server
+kubectl apply -f spring-petclinic-config-server.yml --namespace spring-petclinic
+kubectl get pods -n spring-petclinic
+
+# Deploy the discovery server
+kubectl apply -f spring-petclinic-discovery-server.yml --namespace spring-petclinic
+
+# Deploy the admin server
+kubectl apply -f spring-petclinic-admin-server.yml --namespace spring-petclinic
+
+# Deploy the customers service
+kubectl apply -f spring-petclinic-customers-service.yml --namespace spring-petclinic
+
+# Deploy the visits service
+kubectl apply -f spring-petclinic-visits-service.yml --namespace spring-petclinic
+
+# Deploy the vets service
+kubectl apply -f spring-petclinic-vets-service.yml --namespace spring-petclinic
+
+# Deploy the api gateway
+kubectl apply -f spring-petclinic-api-gateway.yml --namespace spring-petclinic
+
+# List all pods in the namespace
+kubectl get pods -n spring-petclinic
+
+
+
+
+
+
